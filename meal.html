@@ -11,16 +11,13 @@
             margin: 0;
             padding: 40px 20px;
         }
-        /* Headline outside the container */
         .main-heading {
             text-align: center;
             color: #2c3e50;
             margin-bottom: 30px;
             font-size: 32px;
             font-weight: 700;
-            letter-spacing: 1px;
         }
-        /* Grid container for the 40 borders */
         .grid-container {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -28,7 +25,6 @@
             max-width: 1400px;
             margin: 0 auto;
         }
-        /* Individual Border Card */
         .border-card {
             background-color: #ffffff;
             padding: 20px;
@@ -39,7 +35,6 @@
             flex-direction: column;
             gap: 15px;
         }
-        /* Name Input Space */
         .border-name-input {
             width: 100%;
             padding: 8px 12px;
@@ -56,12 +51,10 @@
             outline: none;
             background-color: #fff;
         }
-        /* Side-by-Side Row Layout */
         .meal-row {
             display: flex;
             gap: 12px;
         }
-        /* Meal Column Layout */
         .meal-column {
             flex: 1;
             background: #f9f9f9;
@@ -91,7 +84,6 @@
             font-size: 14px;
             color: #333;
             cursor: pointer;
-            user-select: none;
             width: 100%;
             justify-content: center;
         }
@@ -99,9 +91,7 @@
             margin-right: 6px;
             accent-color: #3498db;
             transform: scale(1.1);
-            cursor: pointer;
         }
-        /* Fixed Footer Status Bar */
         .status-bar {
             position: fixed;
             bottom: 20px;
@@ -113,11 +103,11 @@
             font-size: 13px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
             z-index: 1000;
-            transition: background-color 0.3s ease;
+            transition: background 0.3s ease;
         }
     </style>
 
-    <!-- STEP 1: Include Firebase compatibility SDKs -->
+    <!-- Include Firebase SDK Compatibility Libraries -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 </head>
@@ -125,20 +115,13 @@
 
     <h1 class="main-heading">Rifat Mess Meal System</h1>
     
+    <!-- This container will hold your 40 border cards -->
     <div class="grid-container" id="gridContainer"></div>
 
+    <!-- Live status bar in the bottom-right corner -->
     <div class="status-bar" id="status">Connecting to Database...</div>
 
     <script>
-        // STEP 2: Configure and Initialize Firebase with your no-cost plan details
-        const firebaseConfig = {
-            databaseURL: "https://rifat-mess-meal-system-default-rtdb.asia-southeast1.firebasedatabase.app"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
-        const dbRef = database.ref('mealSystem');
-
         const gridContainer = document.getElementById('gridContainer');
         const statusText = document.getElementById('status');
         const totalBorders = 40;
@@ -148,4 +131,82 @@
             const card = document.createElement('div');
             card.className = 'border-card';
             card.innerHTML = `
-No response
+                <input type="text" id="name_${i}" class="border-name-input" placeholder="Border ${i}: Type Name...">
+                
+                <div class="meal-row">
+                    <div class="meal-column">
+                        <div class="column-title">Regular</div>
+                        <div class="options-group">
+                            <label class="option-label"><input type="checkbox" id="reg_day_${i}"> Day</label>
+                            <label class="option-label"><input type="checkbox" id="reg_night_${i}"> Night</label>
+                        </div>
+                    </div>
+                    
+                    <div class="meal-column">
+                        <div class="column-title">Guest</div>
+                        <div class="options-group">
+                            <label class="option-label"><input type="checkbox" id="guest_day_${i}"> Day</label>
+                            <label class="option-label"><input type="checkbox" id="guest_night_${i}"> Night</label>
+                        </div>
+                    </div>
+                </div>
+            `;
+            gridContainer.appendChild(card);
+        }
+
+        // Select all text inputs and checkboxes for database tracking
+        const allInputs = document.querySelectorAll('.grid-container input');
+
+        // Helper function to change the text and color of the status banner
+        function updateStatus(message, color) {
+            statusText.textContent = message;
+            statusText.style.background = color;
+        }
+        // STEP 1: Connect to your database
+        const firebaseConfig = {
+            databaseURL: "https://rifat-mess-meal-system-default-rtdb.asia-southeast1.firebasedatabase.app"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const dbRef = database.ref('mealSystem');
+
+        // STEP 2: Pull data from the database and listen for updates from other users
+        dbRef.on('value', (snapshot) => {
+            const data = snapshot.val() || {};
+            allInputs.forEach(element => {
+                // If you are actively typing in a text field, do not overwrite it right now
+                if (document.activeElement === element) return;
+
+                const val = data[element.id];
+                if (element.type === 'checkbox') {
+                    element.checked = val === true;
+                } else {
+                    element.value = val !== undefined ? val : '';
+                }
+            });
+            updateStatus("Connected & Syncing Live", "#2c3e50");
+        });
+
+        // STEP 3: Listen for local changes and push them to Firebase instantly
+        allInputs.forEach(element => {
+            const eventType = element.type === 'checkbox' ? 'change' : 'input';
+            element.addEventListener(eventType, () => {
+                const valueToSave = element.type === 'checkbox' ? element.checked : element.value;
+                
+                updateStatus("Saving updates...", "#e67e22");
+
+                // Save to the database
+                dbRef.child(element.id).set(valueToSave)
+                    .then(() => {
+                        updateStatus("Connected & Syncing Live", "#2c3e50");
+                    })
+                    .catch((error) => {
+                        console.error("Save failed:", error);
+                        updateStatus("Error saving data!", "#e74c3c");
+                    });
+            });
+        });
+    </script>
+</body>
+</html>
