@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rifat Mess Meal System</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 40px 20px;
+        }
+        /* Headline outside the container */
+        .main-heading {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        /* Grid container for the 40 borders */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        /* Individual Border Card */
+        .border-card {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            border-top: 4px solid #3498db;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        /* Name Input Space */
+        .border-name-input {
+            width: 100%;
+            padding: 8px 12px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-weight: 600;
+            color: #2c3e50;
+            background-color: #fcfcfc;
+        }
+        .border-name-input:focus {
+            border-color: #3498db;
+            outline: none;
+            background-color: #fff;
+        }
+        /* Side-by-Side Row Layout */
+        .meal-row {
+            display: flex;
+            gap: 12px;
+        }
+        /* Meal Column Layout */
+        .meal-column {
+            flex: 1;
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #eef2f3;
+        }
+        .column-title {
+            font-size: 13px;
+            font-weight: bold;
+            color: #7f8c8d;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            text-align: center;
+            border-bottom: 1px solid #edeec4;
+            padding-bottom: 4px;
+        }
+        .options-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+        }
+        .option-label {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            color: #333;
+            cursor: pointer;
+            user-select: none;
+            width: 100%;
+            justify-content: center;
+        }
+        .option-label input {
+            margin-right: 6px;
+            accent-color: #3498db;
+            transform: scale(1.1);
+            cursor: pointer;
+        }
+        /* Fixed Footer Status Bar */
+        .status-bar {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #2c3e50;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 13px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+
+    <h1 class="main-heading">Rifat Mess Meal System</h1>
+    
+    <div class="grid-container" id="gridContainer">
+        </div>
+
+    <div class="status-bar" id="status">Choices autosaved</div>
+
+    <script>
+        const gridContainer = document.getElementById('gridContainer');
+        const statusText = document.getElementById('status');
+        const totalBorders = 40;
+
+        // Generate 40 border blocks programmatically
+        for (let i = 1; i <= totalBorders; i++) {
+            const card = document.createElement('div');
+            card.className = 'border-card';
+            card.innerHTML = `
+                <input type="text" id="name_${i}" class="border-name-input" placeholder="Border ${i}: Type Name...">
+                
+                <div class="meal-row">
+                    <div class="meal-column">
+                        <div class="column-title">Regular</div>
+                        <div class="options-group">
+                            <label class="option-label"><input type="checkbox" id="reg_day_${i}"> Day</label>
+                            <label class="option-label"><input type="checkbox" id="reg_night_${i}"> Night</label>
+                        </div>
+                    </div>
+                    
+                    <div class="meal-column">
+                        <div class="column-title">Guest</div>
+                        <div class="options-group">
+                            <label class="option-label"><input type="checkbox" id="guest_day_${i}"> Day</label>
+                            <label class="option-label"><input type="checkbox" id="guest_night_${i}"> Night</label>
+                        </div>
+                    </div>
+                </div>
+            `;
+            gridContainer.appendChild(card);
+        }
+
+        // Target all inputs after generation
+        const allInputs = document.querySelectorAll('.grid-container input');
+
+        // Load saved state from LocalStorage on page mount
+        window.addEventListener('DOMContentLoaded', () => {
+            allInputs.forEach(element => {
+                const savedValue = localStorage.getItem(element.id);
+                if (savedValue !== null) {
+                    if (element.type === 'checkbox') {
+                        element.checked = savedValue === 'true';
+                    } else {
+                        element.value = savedValue;
+                    }
+                }
+            });
+        });
+
+        // Autosave system on change/input
+        allInputs.forEach(element => {
+            const eventType = element.type === 'checkbox' ? 'change' : 'input';
+            element.addEventListener(eventType, () => {
+                const valueToSave = element.type === 'checkbox' ? element.checked : element.value;
+                localStorage.setItem(element.id, valueToSave);
+                
+                // Saving feedback indicator
+                statusText.textContent = "Saving updates...";
+                statusText.style.background = "#e67e22";
+                setTimeout(() => {
+                    statusText.textContent = "Choices autosaved";
+                    statusText.style.background = "#2c3e50";
+                }, 600);
+            });
+        });
+    </script>
+
+</body>
+</html>
